@@ -62,7 +62,7 @@ Follow the steps below to set up and run the project.
 ### Setup
 1. Run the MCP server:
    ```bash
-   python mcp_calculator_server.py
+   python mcp_server.py
    ```
 2. Ensure the server is running and accessible.
 

@@ -35,14 +35,18 @@ async def process_prompt_with_openai(prompt):
                     "content": "You are a helpful assistant. Here is a list of available tools, resources, and prompts:\n\n"
                                "Tools:\n"
                                "1. greet(name: str) -> str: Returns a greeting message.\n"
-                               "2. add(a: int, b: int) -> int: Adds two numbers.\n\n"
+                               "2. add(a: int, b: int): Adds two numbers.\n"
+                               "3. analyze_sentiment(text: str) -> dict: Analyzes the sentiment of the given text.\n"
+                               "4. build_website_vector_db(url: str) -> str: Scrapes a website, creates a vector database, and returns the path to the database.\n"
+                               "5. query_vector_db(prompt: str, db_path: str) -> str: Queries the vector database and returns the most relevant information.\n\n"
                                "Resources:\n"
                                "1. data://config: Provides application configuration.\n"
                                "2. users://{user_id}/profile: Retrieves a user's profile.\n\n"
                                "Prompts:\n"
                                "1. summarize(text: str) -> list[dict]: Generates a summary of the provided text.\n\n"
                                "Based on the user's prompt, determine the appropriate tool, resource, or prompt to use and its arguments. "
-                               "Return the result as a valid JSON string. Example: {\"type\": \"tool\", \"name\": \"greet\", \"arguments\": {\"name\": \"John\"}} or {\"type\": \"resource\", \"uri\": \"users://102/profile\"} or {\"type\": \"prompt\", \"name\": \"summarize\", \"arguments\": {\"text\": \"This is a sample text.\"}}",
+                               "Process the tool's raw response to generate a user-friendly output. "
+                               "Return the result as a valid JSON string. Example: {\"type\": \"tool\", \"name\": \"greet\", \"arguments\": {\"name\": \"John\"}, \"processed_output\": \"Hello, John!\"} or {\"type\": \"resource\", \"uri\": \"users://102/profile\"} or {\"type\": \"prompt\", \"name\": \"summarize\", \"arguments\": {\"text\": \"This is a sample text.\"}, \"processed_output\": \"This text discusses...\"}",
                 },
                 {
                     "role": "user",
@@ -66,7 +70,10 @@ async def interact_with_mcp_server(prompt):
     async with client:
         import json
         
-        tool_info = json.loads(prompt)  # Convert JSON string response to dictionary
+        try:
+            tool_info = json.loads(prompt)  # Convert JSON string response to dictionary
+        except json.JSONDecodeError as e:
+            return {"error": f"Failed to decode JSON: {e}"}
         if tool_info.get("type") == "tool":
             tool_name = tool_info.get("name", "default_tool")
             tool_args = tool_info.get("arguments", {})
@@ -93,15 +100,18 @@ def process():
     print(f"Received user input: {user_input}")
     
     processed_prompt = loop.run_until_complete(process_prompt_with_openai(user_input))
+    
     print(f"Processed prompt: {processed_prompt}")
     
     mcp_result = loop.run_until_complete(interact_with_mcp_server(processed_prompt))
     print(f"MCP server result: {mcp_result}")
+    final_response = loop.run_until_complete(process_prompt_with_openai(f"The tool returned: {mcp_result[0].text}" if isinstance(mcp_result, list) and hasattr(mcp_result[0], 'text') else f"The tool returned: {mcp_result}"))
     
     # Ensure JSON serialization
     response = {
         "processed_prompt": str(processed_prompt),
-        "mcp_result": str(mcp_result)
+        "mcp_result": str(mcp_result),
+        "final_response": str(final_response)
     }
     return jsonify(response)
 

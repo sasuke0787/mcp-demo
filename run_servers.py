@@ -6,7 +6,7 @@ def run_flask_api():
 
 def run_mcp_server():
     """Run the MCP server using fastmcp with SSE transport on port 8080."""
-    return subprocess.Popen(["fastmcp", "run", "mcp_calculator_server.py:mcp", "--transport", "sse", "--port", "8080"])
+    return subprocess.Popen(["fastmcp", "run", "mcp_server.py:mcp", "--transport", "sse", "--port", "8080"])
 
 if __name__ == "__main__":
     print("Starting Flask API and MCP server...")

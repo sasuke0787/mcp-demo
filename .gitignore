@@ -23,3 +23,7 @@ yarn-error.log*.env
 
 .faiss
 .pkl
+
+# Ignore .faiss and .pkl files in all directories
+**/*.faiss
+**/*.pkl

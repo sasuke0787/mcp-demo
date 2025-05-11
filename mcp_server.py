@@ -89,33 +89,30 @@ api_version = os.getenv("api_version")  # API version
 # RAG Tool
 print("Tool 'build_website_vector_db' is being invoked...")
 @mcp.tool()
-def build_website_vector_db(url: str) -> str:
-    """Scrapes a website, creates a vector database, and returns the path to the database."""
+def build_website_vector_db(urls: list) -> str:
+    """Scrapes multiple websites, aggregates content, and creates a single vector database."""
     try:
-        print(f"Building vector database for URL: {url}")
-        # Scrape the website
-        try:
-            print(f"Scraping vector database for URL: {url}")
-            response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-            response.raise_for_status()
-            print(f"HTTP Status Code: {response.status_code}")
-            print(f"Response Headers: {response.headers}")
-            print(f"Fetched Content Length: {len(response.text)}")
-        except requests.exceptions.RequestException as e:
-            return f"Error fetching website content: {e}"
-        soup = BeautifulSoup(response.text, 'html.parser')
-        text = soup.get_text()
+        all_texts = []
+        for url in urls:
+            print(f"Scraping content from URL: {url}")
+            try:
+                response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, 'html.parser')
+                text = soup.get_text()
+                all_texts.append(text)
+                print(f"Content from {url} added successfully.")
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching content from {url}: {e}")
+                continue
 
-        # Split the text into chunks
+        # Combine all texts
+        combined_text = "\n".join(all_texts)
         text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-        print("Splitting text into chunks...")
-        texts = text_splitter.split_text(text)
-        print(f"Number of text chunks created: {len(texts)}")
-        print(f"Sample text chunk: {texts[0] if texts else 'No text chunks available'}")
+        texts = text_splitter.split_text(combined_text)
+        print(f"Total number of text chunks: {len(texts)}")
 
         # Create embeddings and vector database
-        print("Creating embeddings...")
-        print("Inspecting embeddings object...")
         embeddings = AzureOpenAIEmbeddings(
             azure_deployment=os.getenv("deployment_embeddings"),
             api_key=os.getenv("SECRET_KEY"),
@@ -123,23 +120,16 @@ def build_website_vector_db(url: str) -> str:
             openai_api_version=os.getenv("api_version"),
             model="text-embedding-3-small"  # Explicit model name
         )
-        print(f"Embeddings object type: {type(embeddings)}")
-        print("Embeddings created successfully.")
-        test_embedding = embeddings.embed_query("test")
-        print("Creating vector database...")
-        
-        print(len(test_embedding))  # Should output a number (e.g., 1536 for text-embedding-ada-002)
         vector_db = FAISS.from_texts(texts, embeddings)
-        print("Vector database created successfully.")
+        print("Combined vector database created successfully.")
 
         # Save the vector database
-        db_path = f"{url.replace('https://', '').replace('http://', '')
-                     .replace('/', '').replace('www','').replace('.','')}_vector_db"
+        db_path = "combined_vector_db"
         vector_db.save_local(db_path)
-
-        return f"Vector database created and saved at: {db_path}"
+        print(f"Vector database saved at: {db_path}")
+        return db_path
     except Exception as e:
-        return f"Error building vector database: {e}"
+        return f"Error creating combined vector database: {e}"
 
 print("Tool 'build_website_vector_db' added.")
 # print(f"Registered tools: {mcp.list_tools()}")

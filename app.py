@@ -37,7 +37,7 @@ async def process_prompt_with_openai(prompt):
                                "1. greet(name: str) -> str: Returns a greeting message.\n"
                                "2. add(a: int, b: int): Adds two numbers.\n"
                                "3. analyze_sentiment(text: str) -> dict: Analyzes the sentiment of the given text.\n"
-                               "4. build_website_vector_db(url: str) -> str: Scrapes a website, creates a vector database, and returns the path to the database.\n"
+                               "4. build_website_vector_db(urls: list) -> str: Scrapes multiple websites, aggregates content, and creates a single vector database.\n"
                                "5. query_vector_db(prompt: str, db_path: str) -> str: Queries the vector database and returns the most relevant information.\n\n"
                                "Resources:\n"
                                "1. data://config: Provides application configuration.\n"

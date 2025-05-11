@@ -79,4 +79,16 @@ Let me know if you encounter any issues during setup!
 
 ### Sample Queries
 
-{ "type": "tool", "name": "query_vector_db", "arguments": { "prompt": "Where is the head office of Phoenix Homes located?", "db_path": "PhoenixHomes_Vector_DB" }}
+Query vector Db: { "type": "tool", "name": "query_vector_db", "arguments": { "prompt": "Where is the head office of Phoenix Homes located?", "db_path": "combined_vector_db" }}
+
+Build website vector db: {
+  "type": "tool",
+  "name": "build_website_vector_db",
+  "arguments": {
+    "urls": [
+      "https://www.phoenixhomes.ca/contact-us/",
+      "https://www.phoenixhomes.ca/about-us/",
+      "https://www.phoenixhomes.ca/faq/"
+    ]
+  }
+}

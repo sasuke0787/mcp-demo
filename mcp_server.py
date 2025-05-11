@@ -71,7 +71,7 @@ def analyze_sentiment(text: str) -> dict:
 print("Tool 'analyze_sentiment' added.")
 # Import necessary libraries for RAG tool
 import requests
-import openai
+import openai 
 from bs4 import BeautifulSoup
 from langchain.vectorstores import FAISS
 from langchain_openai import AzureOpenAIEmbeddings
@@ -117,7 +117,7 @@ def build_website_vector_db(url: str) -> str:
         print("Creating embeddings...")
         print("Inspecting embeddings object...")
         embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.getenv("deployment"),
+            azure_deployment=os.getenv("deployment_embeddings"),
             api_key=os.getenv("SECRET_KEY"),
             azure_endpoint=os.getenv("ENDPOINT"),
             openai_api_version=os.getenv("api_version"),
@@ -144,16 +144,17 @@ def build_website_vector_db(url: str) -> str:
 print("Tool 'build_website_vector_db' added.")
 # print(f"Registered tools: {mcp.list_tools()}")
 
+from openai import AzureOpenAI
 # Tool to query the vector database
 @mcp.tool()
 def query_vector_db(prompt: str, db_path: str) -> str:
-    """Queries the vector database and returns the most relevant information."""
+    """Queries the vector database and returns a natural, user-friendly response using Azure OpenAI."""
     try:
         print(f"Loading vector database from: {db_path}")
         vector_db = FAISS.load_local(
             db_path,
             AzureOpenAIEmbeddings(
-                azure_deployment=os.getenv("deployment"),
+                azure_deployment=os.getenv("deployment_embeddings"),
                 api_key=os.getenv("SECRET_KEY"),
                 azure_endpoint=os.getenv("ENDPOINT"),
                 openai_api_version=os.getenv("api_version"),
@@ -166,7 +167,28 @@ def query_vector_db(prompt: str, db_path: str) -> str:
         # Perform the query
         print(f"Querying vector database with prompt: {prompt}")
         results = vector_db.similarity_search(prompt, k=3)
-        return "\n".join([result.page_content for result in results])
+        retrieved_content = "\n".join([result.page_content for result in results])
+        print(f"Retrieved content: {retrieved_content}")
+        # Generate a user-friendly response using Azure OpenAI
+        print("Generating user-friendly response...")
+        client = AzureOpenAI(
+            api_version=os.getenv("api_version"),
+            azure_endpoint=os.getenv("ENDPOINT"),
+            api_key=os.getenv("SECRET_KEY"),
+        )
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant. Be concise. Do not hallucinate. \n"
+                            "Give response based on the retrieved content.\n" 
+                            "If you don't know the answer, say 'I don't know'.\n"
+                                "Here is the retrieved content:\n\n" + retrieved_content},
+                {"role": "user", "content": f"Based on the following information, provide a natural response: {retrieved_content}"}
+            ],
+            max_tokens=4096,
+            top_p=1.0,
+            model=os.getenv("deployment")
+        )
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error querying vector database: {e}"
 

@@ -76,3 +76,7 @@ Follow the steps below to set up and run the project.
 ---
 
 Let me know if you encounter any issues during setup!
+
+### Sample Queries
+
+{ "type": "tool", "name": "query_vector_db", "arguments": { "prompt": "Where is the head office of Phoenix Homes located?", "db_path": "PhoenixHomes_Vector_DB" }}

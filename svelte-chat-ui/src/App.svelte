@@ -21,11 +21,29 @@
 
         const data = await response.json();
 
-        // Display processed prompt and MCP server response
+        // Extract processed_output from final_response
+        let processedOutput = "";
+        try {
+            const parsedResponse = JSON.parse(data.final_response);
+            // Check if processed_output exists
+            console.log("Processed Output:", parsedResponse);
+            if (parsedResponse && parsedResponse.processed_output) {
+                processedOutput = parsedResponse.processed_output;
+            } else {
+                processedOutput = "No processed output found.";
+            }
+            processedOutput = parsedResponse.processed_output || "No processed output found.";
+        } catch (e) {
+            processedOutput = "Error parsing processed output.";
+            // Log processed output to the console
+            console.log("Processed Output:", processedOutput);
+        }
+
+        // Display processed output and MCP server response
         messages = [
             ...messages,
-            { sender: "LLM", text: `Processed Prompt: ${data.processed_prompt}` },
-            { sender: "MCP Server", text: `Response: ${data.mcp_result}` },
+            { sender: "LLM", text: ` ${processedOutput}` },
+            // { sender: "MCP Server", text: `Response: ${data.mcp_result}` },
         ];
 
         // Clear input field
